@@ -5,43 +5,24 @@ services:
     build: .
     container_name: playwright-bridge-1
 
-    # === Stability fixes for Chromium/Chrome in containers ===
-    # Playwright recommends --init and --ipc=host in Docker to avoid Chromium hangs/zombies and shared-memory issues.
+    # Stability fixes for browsers in containers
     init: true
     ipc: host
     shm_size: "1gb"
 
-    # === If your image supports it, run as non-root (optional but recommended) ===
-    # Comment out if your image doesn't have pwuser or if you rely on root for installs at runtime.
-    # user: "pwuser"
-
-    # === Environment variables ===
     environment:
-      # MCPO API key (you set this in Portainer stack env vars; keep ${...} here)
+      # Passed from Portainer stack environment variables
       - MCPO_API_KEY=${MCPO_API_KEY}
 
-      # Playwright MCP supports env-based config as well as CLI flags.
-      # Use these if you choose to set/override behavior via env instead of Dockerfile CMD flags.
+      # Force MCP to use Playwright-managed Firefox (NOT system firefox)
+      - PLAYWRIGHT_MCP_BROWSER=firefox
       - PLAYWRIGHT_MCP_HEADLESS=1
       - PLAYWRIGHT_MCP_TIMEOUT_NAVIGATION=180000
       - PLAYWRIGHT_MCP_TIMEOUT_ACTION=30000
 
-      # If you're running as root and see sandbox issues, enable this (or add --no-sandbox in your CMD)
-      # - PLAYWRIGHT_MCP_NO_SANDBOX=1
-
-      # Helps when using images with preinstalled browsers (commonly /ms-playwright),
-      # and reduces "browser not installed" mismatch cases.
+      # Make sure MCP/Playwright uses the browsers shipped in the Playwright Docker image
       - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
-
-    # === If you want to control the Playwright MCP flags from compose (overrides Dockerfile CMD) ===
-    # This is optional. Use it if you want your behavior "owned" by the stack instead of the Dockerfile.
-    # command: >
-    #   sh -lc "/opt/venv/bin/mcpo --port 8000 --api-key \"$MCPO_API_KEY\" --
-    #   npx -y @playwright/mcp@latest
-    #   --browser chrome
-    #   --headless
-    #   --timeout-navigation 180000
-    #   --timeout-action 30000"
+      - PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
     ports:
       - "8010:8000"
