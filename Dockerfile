@@ -1,15 +1,18 @@
 FROM mcr.microsoft.com/playwright:v1.50.0-noble
 
-# Install Python + pip (pip is not available by default in this base)
+# Python + venv + pip
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 python3-pip \
+    python3 python3-venv python3-pip \
   && rm -rf /var/lib/apt/lists/*
 
-# Install MCPO
-RUN pip3 install --no-cache-dir mcpo
+# Create a venv and install mcpo into it (avoids PEP 668 issues)
+RUN python3 -m venv /opt/venv \
+  && /opt/venv/bin/pip install --no-cache-dir --upgrade pip \
+  && /opt/venv/bin/pip install --no-cache-dir mcpo
 
 ENV PORT=8000
 WORKDIR /app
 EXPOSE 8000
 
-CMD ["sh","-lc","mcpo --port 8000 --api-key \"$MCPO_API_KEY\" -- npx -y @playwright/mcp@latest"]
+# Use the venv mcpo binary
+CMD ["sh","-lc","/opt/venv/bin/mcpo --port 8000 --api-key \"$MCPO_API_KEY\" -- npx -y @playwright/mcp@latest"]
