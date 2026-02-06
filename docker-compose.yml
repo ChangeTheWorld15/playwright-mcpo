@@ -25,7 +25,7 @@ services:
 
       # Persistent user profile + cookie importer input path
       - PLAYWRIGHT_MCP_USER_DATA_DIR=/data/profile
-      - COOKIES_PATH=/data/cookies.json
+      - COOKIES_PATH=/data/cookies.txt
 
     ports:
       - "8010:8000"
