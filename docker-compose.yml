@@ -23,10 +23,8 @@ services:
       - PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
       - PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
-      # Persist session/cookies in a stable profile directory
+      # Persistent user profile + cookie importer input path
       - PLAYWRIGHT_MCP_USER_DATA_DIR=/data/profile
-
-      # Where our importer reads cookies from
       - COOKIES_PATH=/data/cookies.json
 
     ports:
@@ -35,10 +33,9 @@ services:
     networks:
       - shared-net
 
-    # Mount cookies and persist the profile
+    # Single named volume holds cookies + persistent profile
     volumes:
-      - ./cookies.json:/data/cookies.json:ro
-      - playwright_profile:/data/profile
+      - playwright_data:/data
 
     restart: unless-stopped
 
@@ -47,4 +44,5 @@ networks:
     external: true
 
 volumes:
-  playwright_profile:
+  playwright_data:
+    external: true
