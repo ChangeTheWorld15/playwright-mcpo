@@ -12,19 +12,24 @@ RUN python3 -m venv /opt/venv \
 
 ENV PORT=8000
 WORKDIR /app
-# Install Playwright JS library locally so node can import it
+
+# Install Playwright JS library locally so Node can import it (for scripts/tools)
 RUN npm init -y \
   && npm install --omit=dev playwright
 
-EXPOSE 8000
+# noVNC + minimal desktop for one-time interactive SSO login
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    xvfb fluxbox x11vnc novnc websockify \
+  && rm -rf /var/lib/apt/lists/*
 
-# We'll add this file to your repo next
-# (Docker build will fail until import-cookies.mjs exists)
+# --- Keep your cookie files in repo for now (won't be used in noVNC login phase) ---
+# If you still want it available, keep this; otherwise you can remove later.
 COPY import-cookies.mjs /app/import-cookies.mjs
 
-CMD ["sh","-lc", "\
-export PLAYWRIGHT_BROWSERS_PATH=/ms-playwright; \
-export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1; \
-node /app/import-cookies.mjs || true; \
-/opt/venv/bin/mcpo --port 8000 --api-key \"$MCPO_API_KEY\" -- npx -y @playwright/mcp@0.0.63 \
-"]
+# Start script that launches Xvfb + noVNC + MCPO->Playwright MCP
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+EXPOSE 8000 6080 5900
+
+CMD ["/app/start.sh"]
