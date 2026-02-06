@@ -8,21 +8,21 @@ const stateFlag = `${userDataDir}/.cookies-imported`;
 function parseNetscapeCookies(text) {
   const lines = text.split(/\r?\n/);
   const cookies = [];
-  for (const line of lines) {
-    if (!line || line.startsWith("#")) continue;
 
-    // Netscape format columns:
+  for (const line of lines) {
+    if (!line) continue;
+    if (line.startsWith("#")) continue;
+
     // domain \t includeSubdomains \t path \t secure \t expires \t name \t value
     const parts = line.split("\t");
     if (parts.length < 7) continue;
 
     const [domainRaw, , pathRaw, secureRaw, expiresRaw, name, value] = parts;
 
-    // Some exports use a leading dot in domain; Playwright accepts either.
     const domain = domainRaw.trim();
     const path = (pathRaw || "/").trim();
     const secure = String(secureRaw).toUpperCase() === "TRUE";
-    const expires = Number(expiresRaw); // seconds since epoch, or 0
+    const expires = Number(expiresRaw);
 
     const cookie = {
       name,
@@ -30,13 +30,16 @@ function parseNetscapeCookies(text) {
       domain,
       path,
       secure,
-      httpOnly: false,          // Netscape format doesn't store HttpOnly reliably
-      sameSite: "Lax",          // Netscape format doesn't store SameSite reliably
+      httpOnly: false,
+      sameSite: "Lax",
     };
 
+    // Optional expires
     if (Number.isFinite(expires) && expires > 0) cookie.expires = expires;
+
     cookies.push(cookie);
   }
+
   return cookies;
 }
 
@@ -73,24 +76,28 @@ if (fs.existsSync(stateFlag)) {
 
 const raw = fs.readFileSync(cookiesPath, "utf-8");
 
+// IMPORTANT: ignore leading whitespace/newlines before sniffing format
+const sniff = raw.trimStart();
+
 let cookies = [];
-if (raw.startsWith("# Netscape HTTP Cookie File")) {
-  cookies = parseNetscapeCookies(raw);
+if (sniff.startsWith("# Netscape HTTP Cookie File")) {
+  cookies = parseNetscapeCookies(sniff);
 } else {
-  cookies = parseJsonCookies(raw);
+  cookies = parseJsonCookies(sniff);
 }
 
 if (!Array.isArray(cookies) || cookies.length === 0) {
-  console.error("No cookies found after parsing (check file format/domain).");
+  console.error("No cookies found after parsing. Check export/domain.");
   process.exit(1);
 }
 
 console.log(`Importing ${cookies.length} cookies into persistent profile: ${userDataDir}`);
 
+fs.mkdirSync(userDataDir, { recursive: true });
+
 const context = await firefox.launchPersistentContext(userDataDir, { headless: true });
 await context.addCookies(cookies);
 await context.close();
 
-fs.mkdirSync(userDataDir, { recursive: true });
 fs.writeFileSync(stateFlag, new Date().toISOString());
 console.log("Cookies imported successfully.");
