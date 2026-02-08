@@ -18,5 +18,5 @@ EXPOSE 8000
 # Playwright MCP supports args like --headless --browser chromium and also documents docker usage with these flags.  [oai_citation:3‡GitHub](https://github.com/microsoft/playwright-mcp)
 CMD ["sh","-lc", "\
   /opt/venv/bin/mcpo --host 0.0.0.0 --port 8000 --api-key \"$MCPO_API_KEY\" -- \
-  npx -y @playwright/mcp@latest --browser chromium --headless --no-sandbox --user-data-dir /data/profile \
+  npx -y @playwright/mcp@latest --browser firefox --headless --no-sandbox --user-data-dir /data/profile \
 "]
