@@ -8,6 +8,8 @@ services:
       dockerfile: Dockerfile
     environment:
       - MCPO_API_KEY=${MCPO_API_KEY}
+      - FUSE_USER=${FUSE_USER}
+      - FUSE_PASS=${FUSE_PASS}
     ports:
       - "8010:8000"
     volumes:
